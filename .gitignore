@@ -1,0 +1,6 @@
+.env*
+build
+.DS_Store
+*.o
+compile_commands.json
+.cache
