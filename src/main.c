@@ -9,6 +9,8 @@
     #define GLSL_VERSION            100
 #endif
 
+#define FLOOR_SIZE 40 // 200
+
 int main(void) {
     // Initialization
     //--------------------------------------------------------------------------------------
@@ -16,7 +18,7 @@ int main(void) {
     const int screenWidth = 1200;
     const int screenHeight = 700;
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - 3d camera mode");
+    InitWindow(screenWidth, screenHeight, "burako");
 
     // CAMERA
     //--------------------------------------------------------------------------------------
@@ -34,12 +36,7 @@ int main(void) {
     // Load basic lighting shader
     Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting.vs", GLSL_VERSION),
                                TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
-
-    // Get some required shader locations
     shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-    // NOTE: "matModel" location name is automatically assigned on shader loading, 
-    // no need to get the location again if using that uniform name
-    //shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
 
     // Ambient light level (some basic lighting)
     int ambientLoc = GetShaderLocation(shader, "ambient");
@@ -61,11 +58,17 @@ int main(void) {
     piece.materials[0].shader = shader;
     Vector3 piecePos = { 0.0f, 0.0f, 0.0f };                        // Set model position
 
-    SetTargetFPS(60);
+    Mesh mesh = GenMeshPlane(FLOOR_SIZE, FLOOR_SIZE, 1, 1);
+    Model floor = LoadModelFromMesh(mesh);
+    Texture2D texture = LoadTexture("resources/fabric.2k.png");    // Load map texture
+    floor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;    // Set map diffuse texture
+    floor.materials[0].shader = shader;
 
     // Create light
     Light lights[MAX_LIGHTS] = { 0 };
     lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 15, -15 }, (Vector3){ 0.0f, 0.0f, 0.0f }, WHITE, shader);
+
+    SetTargetFPS(60);
 
     // MAIN GAME LOOP
     //--------------------------------------------------------------------------------------
@@ -86,9 +89,9 @@ int main(void) {
         BeginDrawing();
         {
             ClearBackground(BLACK);
-
             BeginMode3D(camera);
             {
+                DrawModel(floor, (Vector3){ 0.0f, 0.0f, 0.0f }, 1.0f, BLACK);                     // Draw maze map
                 // Draw spheres to show where the lights are
                 for (int i = 0; i < MAX_LIGHTS; i++) {
                     if (lights[i].enabled) DrawSphereEx(lights[i].position, 0.2f, 8, 8, lights[i].color);
@@ -96,12 +99,10 @@ int main(void) {
                 }
                 DrawModel(board, boardPos, 1.0f, WHITE);
                 DrawModel(piece, piecePos, 1.0f, WHITE);
-                DrawGrid(40, 1.0f);
+                // DrawGrid(40, 1.0f);
             }
             EndMode3D();
-
             DrawText("Welcome to the third dimension!", 10, 40, 20, DARKGRAY);
-
             DrawFPS(10, 10);
         }
         EndDrawing();
